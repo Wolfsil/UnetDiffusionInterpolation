@@ -4,7 +4,10 @@ import numpy as np
 a= np.array([0,1,2,3,4,5])
 
 #랜덤 배열 생성
-x = np.random.random((1,3,4,4,4)) 
+x = np.random.rand(4,4) 
+
+#패딩
+x=np.pad(x, pad_width=((0,2),(0,2)),mode="constant",constant_values=0)
 
 #넘파이 추출
 a[0] #0번째 값 추출
