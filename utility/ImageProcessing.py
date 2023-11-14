@@ -32,9 +32,10 @@ def PreprocessGif(path, frame=5):
 
 
 # gif를 읽고 넘파이 배열로 노멀라이즈해줌
+# 데이터를 어떻게 받아올지 나중에 주로 수정할 부분
 def LoadGif(path, paddingSize=32):
     gif = Image.open(path)
-    extractFrame = np.random.randint(4, 11)
+    extractFrame = np.random.randint(4, 9)
     remainFrame = gif.n_frames - extractFrame
     start = 0
     end = 0
@@ -92,7 +93,7 @@ def Divide(arr):
     return [evens, odds]
 
 
-def diffusionSchedule(diffusionTime):
+def DiffusionSchedule(diffusionTime):
     startAng = np.arccos(0.99)
     endAng = np.arccos(0.1)
     diffusionAng = startAng + diffusionTime * (
@@ -110,13 +111,13 @@ def DatasetGenerater(gifPath):
         x, y = Divide(LoadGif(i))
         noise = np.random.rand(x.shape[0], x.shape[1], x.shape[2], x.shape[3])
         step = np.ones((x.shape[0], x.shape[1], x.shape[2], 1))
-        sigRate, noiseRate = diffusionSchedule(np.random.rand())
+        sigRate, noiseRate = DiffusionSchedule(np.random.rand())
         noisyImage = sigRate * y + noiseRate * noise
         step = step * sigRate
         yield np.concatenate([x, noisyImage, step], axis=-1), noise
 
 
-def saveGif(path, images):
+def SaveGif(path, images):
     imgs = []
     for i in images:
         img = Image.fromarray((i * 255).round().astype(np.int8), mode="RGBA")
