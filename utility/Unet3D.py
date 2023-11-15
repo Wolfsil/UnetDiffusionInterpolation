@@ -9,6 +9,16 @@ def SeperableConv(filter, input):
     return pointwise
 
 
+def SeperableConvEnd(filter, input):
+    depthwise = tf.keras.layers.Conv3D(
+        input.shape[-1], 3, padding="same", groups=input.shape[-1]
+    )(input)
+    pointwise = tf.keras.layers.Conv3D(filter, 1, padding="same", dtype=tf.float32)(
+        depthwise
+    )
+    return pointwise
+
+
 def Block(filter, input):
     # conv1=tf.keras.layers.Conv3D(filter,3,padding="same")(input)
     conv1 = SeperableConv(filter, input)
