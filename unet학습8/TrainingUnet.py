@@ -9,18 +9,18 @@ from utility.Unet2D import *
 pathTrain = "/content/drive/MyDrive/unet학습/train"  # 학습할 이미지
 pathTest = "/content/drive/MyDrive/unet학습/test"  # 벨리데이션 테스트 이미지
 pathSave = (
-    "/content/drive/MyDrive/unet학습3/checkPoint/{epoch}_checkPoint.ckpt"  # 모델 저장할 위치
+    "/content/drive/MyDrive/unet학습8/checkPoint/{epoch}_checkPoint.ckpt"  # 모델 저장할 위치
 )
-pathWeight = "/content/drive/MyDrive/unet학습3/checkPoint/20_checkPoint.ckpt"
+pathWeight = "/content/drive/MyDrive/unet학습8/checkPoint/30_checkPoint.ckpt"
 
 sample = 112
 batchSize = 1
 epoch = 30
-lr = 3e-3
+lr = 1e-3
 wd = 1e-4
 
 rlrFactor = 0.5
-rlrPatience = 7
+rlrPatience = 12
 rlrMinLr = 1e-4
 
 
@@ -36,9 +36,9 @@ if gpus:
 print("")
 print("트레인셋 전처리")
 # 사용불가능 파일 전처리
-gifPath = GetFilePath(pathTrain)
-for i in gifPath:
-    PreprocessGif(i)
+# gifPath = GetFilePath(pathTrain)
+# for i in gifPath:
+#     PreprocessGif(i)
 gifPath = GetFilePath(pathTrain)
 gifPath = random.sample(gifPath, sample)
 
@@ -48,36 +48,42 @@ print("총 트레인셋 갯수", len(gifPath))
 trainDataset = tf.data.Dataset.from_generator(
     DatasetGenerater,
     args=[gifPath],
-    output_types=((tf.float32, tf.float32), tf.float32),
-    output_shapes=(((None, None, 4), (None, None, 4)),(None, None, 4)),
+    output_types=((tf.float32, tf.float32, tf.float32, tf.float32), tf.float32),
+    output_shapes=(
+        ((None, None, 4), (None, None, 4), (None, None, 1), (None, None, 4)),
+        (None, None, 4),
+    ),
 )
 # (inputImages, outputImages)
 trainDataset = trainDataset.batch(batchSize).prefetch(1)
 
-# print("")
-# print("테스트셋 전처리")
+print("")
+print("테스트셋 전처리")
 # gifPathTest = GetFilePath(pathTest)
 # for i in gifPathTest:
 #     PreprocessGif(i)
-# gifPathTest = GetFilePath(pathTest)
+gifPathTest = GetFilePath(pathTest)
 
-# print("")
-# print("총 테스트셋 갯수", len(gifPathTest))
+print("")
+print("총 테스트셋 갯수", len(gifPathTest))
 
 
-# testDataset = tf.data.Dataset.from_generator(
-#     DatasetGenerater,
-#     args=[gifPathTest],
-#     output_types=(tf.float32, tf.float32),
-#     output_shapes=((None, None, 13), (None, None, 4)),
-# )
-# # (inputImages, outputImages)
-# testDataset = testDataset.batch(batchSize).prefetch(1)
+testDataset = tf.data.Dataset.from_generator(
+    DatasetGenerater,
+    args=[gifPathTest],
+    output_types=((tf.float32, tf.float32, tf.float32, tf.float32), tf.float32),
+    output_shapes=(
+        ((None, None, 4), (None, None, 4), (None, None, 1), (None, None, 4)),
+        (None, None, 4),
+    ),
+)
+# (inputImages, outputImages)
+testDataset = testDataset.batch(batchSize).prefetch(1)
 
 
 # 모델생성
 model = UnetModel(inputShape=(None, None, 4))
-# model.load_weights(pathWeight)
+model.load_weights(pathWeight)
 
 # 콜백생성
 cpCallback = tf.keras.callbacks.ModelCheckpoint(
@@ -99,8 +105,6 @@ model.compile(
 model.fit(
     trainDataset,
     epochs=epoch,
-    callbacks=[
-        cpCallback
-        #  , rlrCallback
-    ],
+    validation_data=testDataset,
+    callbacks=[cpCallback, rlrCallback],
 )

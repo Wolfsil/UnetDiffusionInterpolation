@@ -37,7 +37,7 @@ def FrameInterpoloation(model, inputImage: np.ndarray, diffusionStep=20):
     return np.clip(predImage, 0, 1)
 
 
-x,y = DivideConcatenate(LoadGifExtract(imagePath))
+x, y = DivideConcatenate(LoadGifExtract(imagePath))
 # 모델생성
 model = UnetModel(inputShape=(None, None, 13))
 

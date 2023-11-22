@@ -59,7 +59,7 @@ def LoadGifExtract(path, extractFrame=3, paddingSize=32):
         )
         images.append(temp)
     gif.close()
-    return np.array(images) / 255.0
+    return np.array(images)
 
 
 def LoadGifAll(path, paddingSize=32):
@@ -80,7 +80,7 @@ def LoadGifAll(path, paddingSize=32):
         )
         images.append(temp)
     gif.close()
-    return np.array(images) / 255.0
+    return np.array(images)
 
 
 # # 인풋데이터와 아웃풋 데이터를 분리
@@ -90,59 +90,42 @@ def Divide(arr):
     return evens, odds
 
 
-# def DivideConcatenate(arr):
-#     evens = arr[0::2]
-#     odds = arr[1::2]
-#     return np.concatenate(evens, axis=-1), np.concatenate(odds, axis=-1)
-
-
-# def DiffusionSchedule(diffusionTime):
-#     startAng = np.arccos(0.99)
-#     endAng = np.arccos(0.1)
-#     diffusionAng = startAng + diffusionTime * (
-#         endAng - startAng
-#     )  # DFT가 1에 가까울수록 노이즈(1에서 시작)
-#     sigRate = np.cos(diffusionAng)  # DFT가 1에 가까울수록 0.01
-#     noiseRate = np.sin(diffusionAng)  # DFT가 1에 가까울수록 0.99
-#     return sigRate, noiseRate
+def DiffusionSchedule(diffusionTime):
+    startAng = np.arccos(0.99)
+    endAng = np.arccos(0.1)
+    diffusionAng = startAng + diffusionTime * (
+        endAng - startAng
+    )  # DFT가 1에 가까울수록 노이즈(1에서 시작)
+    sigRate = np.cos(diffusionAng)  # DFT가 1에 가까울수록 0.01
+    noiseRate = np.sin(diffusionAng)  # DFT가 1에 가까울수록 0.99
+    return sigRate, noiseRate
 
 
 # 데이터셋 제너레이터 생성
 def DatasetGenerater(gifPath):
     # gif파일을 반환
+
     for i in gifPath:
-        inputImage, outputImage = Divide(LoadGifExtract(i))  # 8채널, 4채널\
-        yield (inputImage[0], inputImage[1]), outputImage
+        inputImage, outputImage = Divide(LoadGifExtract(i))  # 4채널(2개), 4채널(1개)
+        step = np.ones((inputImage.shape[1], inputImage.shape[2], 1))
+        noise = np.random.rand(
+            outputImage.shape[1], outputImage.shape[2], outputImage.shape[3]
+        )*255  # 4채널
+        sigRate, noiseRate = DiffusionSchedule(np.random.rand())
+        step = step * sigRate  # 1채널
+        noisyImage = sigRate * outputImage[0] + noiseRate * noise  # 4 채널
 
-
-# def DatasetGenerater(gifPath):
-#     # gif파일을 반환
-#     for i in gifPath:
-#         inputImage, outputImage = DivideConcatenate(LoadGifExtract(i))  # 8채널, 4채널
-#         step = np.ones((inputImage.shape[0], inputImage.shape[1], 1))
-#         noise = np.random.rand(
-#             outputImage.shape[0], outputImage.shape[1], outputImage.shape[2]
-#         )  # 4채널
-
-#         # 8 채널
-#         sigRate, noiseRate = DiffusionSchedule(np.random.rand())
-#         step = step * sigRate  # 1채널
-
-#         noisyImage = sigRate * outputImage + noiseRate * noise  # 4 채널
-
-#         yield np.concatenate(
-#             [inputImage, noisyImage, step], axis=-1
-#         ), noise  # 13채널, 4채널
+        yield (inputImage[0], noisyImage, step, inputImage[1]), outputImage[0]
 
 
 # 아름답진 않지만 간결하다.
 def SaveGif(path, inputImage, outputImage):
     imgs = []
 
-    inputImage = inputImage * 255
-    outputImage = outputImage * 255
+    inputImage = inputImage
+    outputImage = outputImage
     imgs.append(Image.fromarray(inputImage[0].round().astype(np.int8), mode="RGBA"))
-    imgs.append(Image.fromarray(outputImage.round().astype(np.int8), mode="RGBA"))
+    imgs.append(Image.fromarray(outputImage[0].round().astype(np.int8), mode="RGBA"))
 
     imgs.append(Image.fromarray(inputImage[1].round().astype(np.int8), mode="RGBA"))
 

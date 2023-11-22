@@ -23,8 +23,10 @@ def Block(filter, input):
     return swishAct2
 
 
-def UnetModel(inputShape=(None, None, 4)):
+def UnetModel(inputShape=(None, None, 4), stepShape=(None, None, 1)):
     primaryImage = tf.keras.Input(shape=inputShape)
+    noisyImage = tf.keras.Input(shape=inputShape)
+    step = tf.keras.Input(shape=stepShape)
     secondaryImage = tf.keras.Input(shape=inputShape)
 
     ###
@@ -107,8 +109,10 @@ def UnetModel(inputShape=(None, None, 4)):
 
     ###
     # 백본 ae
+    maine0 = Block(16, noisyImage)
+    stepe0 = Block(16, step)
 
-    maine1 = Block(32, tf.keras.layers.Concatenate()([pe1, se1]))
+    maine1 = Block(32, tf.keras.layers.Concatenate()([pe1, maine0, stepe0, se1]))
     maine1Pooling = tf.keras.layers.MaxPooling2D(pool_size=(2, 2))(maine1)
 
     maine2 = Block(64, tf.keras.layers.Concatenate()([pe2, maine1Pooling, se2]))
@@ -160,8 +164,8 @@ def UnetModel(inputShape=(None, None, 4)):
 
     outputImage = SeperableConv(4, maind1)
 
-    return tf.keras.Model([primaryImage, secondaryImage], outputImage)
+    return tf.keras.Model([primaryImage, noisyImage, step, secondaryImage], outputImage)
 
 
 if __name__ == "main":
-    laddernetModel().summary()
+    UnetModel().summary()
