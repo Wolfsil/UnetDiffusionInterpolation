@@ -11,11 +11,11 @@ pathTest = "/content/drive/MyDrive/unet학습/test"  # 벨리데이�
 pathSave = (
     "/content/drive/MyDrive/unet학습8/checkPoint/{epoch}_checkPoint.ckpt"  # 모델 저장할 위치
 )
-pathWeight = "/content/drive/MyDrive/unet학습8/checkPoint/30_checkPoint.ckpt"
+pathWeight = "/content/drive/MyDrive/unet학습8/checkPoint/20_checkPoint.ckpt"
 
-sample = 112
-batchSize = 1
-epoch = 30
+sample = 300
+batchSize = 8
+epoch = 20
 lr = 1e-3
 wd = 1e-4
 
@@ -78,7 +78,7 @@ testDataset = tf.data.Dataset.from_generator(
     ),
 )
 # (inputImages, outputImages)
-testDataset = testDataset.batch(batchSize).prefetch(1)
+testDataset = testDataset.batch(1).prefetch(1)
 
 
 # 모델생성

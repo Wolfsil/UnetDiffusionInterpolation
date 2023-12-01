@@ -24,7 +24,7 @@ def PreprocessGif(path, frame=4):
     else:
         targetSize = targetSize[1]
 
-    if targetFrame < frame or targetSize > 512:
+    if targetFrame < frame or targetSize > 128:
         print(path, ": ", targetFrame, " ", targetSize, "사용불가능")
         os.remove(path=path)
     else:
@@ -32,7 +32,7 @@ def PreprocessGif(path, frame=4):
 
 
 # gif를 읽고 넘파이 배열로 노멀라이즈해줌
-def LoadGifExtract(path, extractFrame=3, paddingSize=32):
+def LoadGifExtract(path, extractFrame=3, paddingSize=128):
     gif = Image.open(path)
     flip = np.random.randint(0, 7)
     remainFrame = gif.n_frames - extractFrame
@@ -62,7 +62,7 @@ def LoadGifExtract(path, extractFrame=3, paddingSize=32):
     return np.array(images)
 
 
-def LoadGifAll(path, paddingSize=32):
+def LoadGifAll(path, paddingSize=128):
     gif = Image.open(path)
 
     images = []
@@ -108,9 +108,12 @@ def DatasetGenerater(gifPath):
     for i in gifPath:
         inputImage, outputImage = Divide(LoadGifExtract(i))  # 4채널(2개), 4채널(1개)
         step = np.ones((inputImage.shape[1], inputImage.shape[2], 1))
-        noise = np.random.rand(
-            outputImage.shape[1], outputImage.shape[2], outputImage.shape[3]
-        )*255  # 4채널
+        noise = (
+            np.random.rand(
+                outputImage.shape[1], outputImage.shape[2], outputImage.shape[3]
+            )
+            * 255
+        )  # 4채널
         sigRate, noiseRate = DiffusionSchedule(np.random.rand())
         step = step * sigRate  # 1채널
         noisyImage = sigRate * outputImage[0] + noiseRate * noise  # 4 채널
