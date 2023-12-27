@@ -49,7 +49,7 @@ trainDataset = tf.data.Dataset.from_generator(
     DatasetGenerater,
     args=[gifPath],
     output_types=((tf.float32, tf.float32), tf.float32),
-    output_shapes=(((None, None, 4), (None, None, 4)),(None, None, 4)),
+    output_shapes=(((None, None, 4), (None, None, 4)), (None, None, 4)),
 )
 # (inputImages, outputImages)
 trainDataset = trainDataset.batch(batchSize).prefetch(1)

@@ -109,10 +109,14 @@ def DatasetGenerater(gifPath):
     # gif파일을 반환
     for i in gifPath:
         x, y = Divide(LoadGif(i))
-        noise = np.random.rand(x.shape[0], x.shape[1], x.shape[2], x.shape[3])
-        step = np.ones((x.shape[0], x.shape[1], x.shape[2], 1))
+        noise0 = np.random.rand(y.shape[1], y.shape[2], y.shape[3])
+        noise1 = np.random.rand(y.shape[1], y.shape[2], y.shape[3])
+        step = np.ones((x.shape[1], x.shape[2], 1))
         sigRate, noiseRate = DiffusionSchedule(np.random.rand())
-        noisyImage = sigRate * y + noiseRate * noise
+
+        noisyImage0 = sigRate * y[0] + noiseRate * noise0
+        noisyImage1 = sigRate * y[1] + noiseRate * noise1
+
         step = step * sigRate
         yield np.concatenate([x, noisyImage, step], axis=-1), noise
 
