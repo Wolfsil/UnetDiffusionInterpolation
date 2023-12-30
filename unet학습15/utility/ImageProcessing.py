@@ -58,7 +58,6 @@ def DivideFolder(pathList, savePath, diviedSize=64):
 # gif를 읽고 넘파이 배열로 노멀라이즈해줌(path: 이미지 파일 경로, extractFrame: 몇프레임을 뽑을 것인지, paddingSize: 몇 배수로 패딩)
 def LoadGifExtract(path, extractFrame=3, paddingSize=64):
     gif = Image.open(path)
-    extractFrame = extractFrame + 1
     flip = np.random.randint(0, 7)
     # extractFrame = np.random.randint(4, 9, 2)
     remainFrame = gif.n_frames - extractFrame
@@ -141,10 +140,10 @@ def LoadGifAll(path, paddingSize=64):
 
 
 # 0번 차원에서 인풋데이터와 아웃풋 데이터를 분리(arr: 배열)
-def Divide(arr):
-    evens = arr[0::2]
-    odds = arr[1::2]
-    return evens, odds
+# def Divide(arr):
+#     evens = arr[0::2]
+#     odds = arr[1::2]
+#     return evens, odds
 
 
 # sincos 스케줄러(diffusionTime: 0~1까지의 수. 1에가까울수록 노이즈가 강함)
@@ -159,40 +158,33 @@ def DiffusionSchedule(diffusionTime):
     return sigRate, noiseRate
 
 
-# 데이터셋 제너레이터 생성(gifPath: 파일 경로 리스트)
+# 데이터셋 제너레이터 생성
 def DatasetGenerater(gifPath):
+    # gif파일을 반환
     for i in gifPath:
-        x, y = Divide(LoadGifExtract(i))
-        noise = np.random.rand(y.shape[1], y.shape[2], y.shape[3])
+        x = LoadGifExtract(i, 5)
+        noise = np.random.rand(x.shape[0], x.shape[1], x.shape[2], x.shape[3])
+        step = np.ones((x.shape[0], x.shape[1], x.shape[2], 1))
+        noise[1] = 0
+        noise[3] = 0
+
         sigRate, noiseRate = DiffusionSchedule(np.random.rand())
 
-        noisyImage = sigRate * y[0] + noiseRate * noise
-        step = np.ones((x.shape[1], x.shape[2], 1)) * sigRate
+        noisyImage = sigRate * x + noiseRate * noise
 
-        yield (x[0], x[1], noisyImage, step), noise
+        noisyImage[1] = x[1]
+        noisyImage[3] = x[3]
+
+        step = step * sigRate
+
+        yield (noisyImage, step), noise
 
 
-# 아름답진 않지만 간결하다.(path: 저장경로, inputImage: 입력이미지, outputImage: 출력이미지)
-def SaveGif(path, inputImage, outputImage):
+def SaveGif(path, images):
     imgs = []
-    # outputImage = np.split(outputImage, 2, axis=-1)
-
-    imgs.append(
-        Image.fromarray((inputImage[0] * 255).round().astype(np.int32), mode="RGBA")
-    )
-    imgs.append(
-        Image.fromarray((outputImage * 255).round().astype(np.int32), mode="RGBA")
-    )
-    imgs.append(
-        Image.fromarray((inputImage[1] * 255).round().astype(np.int32), mode="RGBA")
-    )
-
+    for i in images:
+        img = Image.fromarray((i * 255).round().astype(np.int8), mode="RGBA")
+        imgs.append(img)
     imgs[0].save(
-        path,
-        save_all=True,
-        format="GIF",
-        append_images=(imgs[1], imgs[2]),
-        disposal=2,
-        duration=400,
-        loop=0,
+        path, save_all=True, append_images=imgs[1:], disposal=2, duration=150, loop=0
     )
